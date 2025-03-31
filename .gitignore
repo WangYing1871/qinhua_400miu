@@ -1,0 +1,15 @@
+build/
+build3/
+build4/
+bash.sh
+config/
+data/
+rawdat/
+.*.swp
+.*.root
+.*.dat
+Makefile
+backup/
+TEST/
+.*.zip
+doc/
