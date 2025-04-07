@@ -21,6 +21,7 @@
 #include <vector>
 #include <stdexcept>
 #include <filesystem>
+#include <ctime>
 
 #include "TFile.h"
 #include "TTree.h"
@@ -30,6 +31,20 @@
 
 #include "clusters.hpp"
 #include "data_strcut_cint.h"
+namespace util{
+std::string trim_first_digits(std::string const& str){
+  auto iter = std::find_if(std::begin(str),std::end(str),[](auto a){return std::isdigit(a);});
+  if (iter != std::end(str)){
+    std::string ret("");
+    for(auto it = iter; it != std::end(str); it++){
+      if (!std::isdigit(*it)) return ret; 
+      ret.push_back(*it); }
+  }
+  std::cerr<<"[Warning] No time_stamp info get. use now time point\n";
+  return std::to_string(std::time(0));
+}
+
+}
 namespace helper{
 int re_channel_id(int in){
   return in<11 ? in :
@@ -207,6 +222,14 @@ int main(int argc, char* argv[]){
   std::string fin_name = argv[1];
   std::string baseline_name = argv[2];
   auto* fin = new TFile(fin_name.c_str());
+  auto ts_str = util::trim_first_digits(fin_name.substr(fin_name.find_last_of('/')+1));
+  auto nm0  = "run_"+ts_str+"out_mt-0.root";
+  auto nm1  = "run_"+ts_str+"out_mt-1.root";
+  //info_out(nm0);
+  //exit(0);
+  namespace fs = std::filesystem;
+  if (!fs::exists(fin_name) || !fs::is_regular_file(fin_name))
+    throw std::invalid_argument("invalid input root file");
   auto* tree = (TTree*)fin->Get("CollectionTree");
   entry_new* data = new entry_new;
   tree->SetBranchAddress("data",std::addressof(data));
@@ -256,8 +279,10 @@ int main(int argc, char* argv[]){
   
 
 
-  auto storeL0 = make_store("layer0","layer0.root","fec_origin_data");
-  auto storeL1 = make_store("layer1","layer1.root","fec_origin_data");
+
+
+  auto storeL0 = make_store("layer0",nm0,"fec_origin_data");
+  auto storeL1 = make_store("layer1",nm1,"fec_origin_data");
   std::size_t total_wv = 0;
   std::size_t valid_wv = 0;
 
